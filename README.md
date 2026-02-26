@@ -111,6 +111,9 @@ Main keys:
 - `codexHomeRoot`: base dir for per-user `CODEX_HOME`
 - `openaiCodexTimeoutMs`
 - `openaiRateLimitCacheTtlMs`
+- `openaiRateLimitErrorCacheTtlMs`: cache TTL for transient rate-limit read failures
+- `openaiRateLimitAuthErrorCacheTtlMs`: cache TTL for auth-invalid rate-limit failures (for example token invalidated)
+- `openaiSpecialPoolCacheTtlMs`: short TTL for cached master-key eligible user pool
 
 See `settings.example.json` for full template.
 

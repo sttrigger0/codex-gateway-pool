@@ -99,7 +99,12 @@ const dashboardSessions = new Map();
 const openaiPortalSessions = new Map();
 const openaiDeviceFlows = new Map();
 const openaiRateLimitCache = new Map();
+const openaiRateLimitInflight = new Map();
+const openaiSpecialAvailableUsersCache = new Map();
 const masterKeyCursorByHash = new Map();
+const OPENAI_RATE_LIMIT_ERROR_CACHE_TTL_MS = clamp(toInt(settings.openaiRateLimitErrorCacheTtlMs, 120_000), 5_000, 30 * 60 * 1000);
+const OPENAI_RATE_LIMIT_AUTH_ERROR_CACHE_TTL_MS = clamp(toInt(settings.openaiRateLimitAuthErrorCacheTtlMs, 600_000), 30_000, 60 * 60 * 1000);
+const OPENAI_SPECIAL_AVAILABLE_USERS_CACHE_TTL_MS = clamp(toInt(settings.openaiSpecialPoolCacheTtlMs, 15_000), 1_000, 5 * 60 * 1000);
 
 function readState() {
   const raw = safeReadJson(STATE_FILE, { revision: 1, users: {}, specialMasterKey: {} });
@@ -848,36 +853,82 @@ async function getCachedCodexRateLimitsForUser(user) {
   if (!username) return { ok: false, error: 'Missing username' };
   const cached = openaiRateLimitCache.get(username);
   const now = Date.now();
-  if (cached && (now - toInt(cached.fetchedAt, 0)) <= OPENAI_RATE_LIMIT_CACHE_TTL_MS) {
-    return cached.result;
+
+  if (cached) {
+    const cachedResult = cached.result && typeof cached.result === 'object' ? cached.result : { ok: false, error: 'Invalid cache state' };
+    const ageMs = now - toInt(cached.fetchedAt, 0);
+    const ttlMs = cachedResult.ok === true
+      ? OPENAI_RATE_LIMIT_CACHE_TTL_MS
+      : clamp(toInt(cached.errorTtlMs, OPENAI_RATE_LIMIT_ERROR_CACHE_TTL_MS), 5_000, 60 * 60 * 1000);
+    if (ageMs <= ttlMs) {
+      return cachedResult;
+    }
   }
 
-  const first = await queryCodexRateLimitsForUser(user, { timeoutMs: 8_000 });
-  if (first && first.ok === true) {
-    openaiRateLimitCache.set(username, { fetchedAt: now, result: first });
-    return first;
+  const inflight = openaiRateLimitInflight.get(username);
+  if (inflight) {
+    return inflight;
   }
 
-  const second = await queryCodexRateLimitsForUser(user, { timeoutMs: 12_000 });
-  if (second && second.ok === true) {
-    openaiRateLimitCache.set(username, { fetchedAt: now, result: second });
-    return second;
-  }
+  const isAuthInvalidRateLimitResult = (result) => {
+    if (!result || result.ok === true) return false;
+    const err = String(result.error || '').toLowerCase();
+    return err.includes('token_invalidated')
+      || err.includes('authentication token has been invalidated')
+      || (err.includes('401') && err.includes('unauthorized'));
+  };
 
-  if (cached && cached.result && cached.result.ok === true) {
-    return {
-      ...cached.result,
-      stale: true,
-      staleAgeMs: Math.max(0, now - toInt(cached.fetchedAt, 0)),
-    };
-  }
+  const fetchPromise = (async () => {
+    const first = await queryCodexRateLimitsForUser(user, { timeoutMs: 8_000 });
+    if (first && first.ok === true) {
+      openaiRateLimitCache.set(username, { fetchedAt: now, result: first });
+      return first;
+    }
 
-  return second || first || { ok: false, error: 'Failed to read Codex rate limits' };
+    if (isAuthInvalidRateLimitResult(first)) {
+      openaiRateLimitCache.set(username, {
+        fetchedAt: now,
+        result: first,
+        errorTtlMs: OPENAI_RATE_LIMIT_AUTH_ERROR_CACHE_TTL_MS,
+      });
+      return first;
+    }
+
+    const second = await queryCodexRateLimitsForUser(user, { timeoutMs: 12_000 });
+    if (second && second.ok === true) {
+      openaiRateLimitCache.set(username, { fetchedAt: now, result: second });
+      return second;
+    }
+
+    if (cached && cached.result && cached.result.ok === true) {
+      return {
+        ...cached.result,
+        stale: true,
+        staleAgeMs: Math.max(0, now - toInt(cached.fetchedAt, 0)),
+      };
+    }
+
+    const failure = second || first || { ok: false, error: 'Failed to read Codex rate limits' };
+    openaiRateLimitCache.set(username, {
+      fetchedAt: now,
+      result: failure,
+      errorTtlMs: isAuthInvalidRateLimitResult(failure)
+        ? OPENAI_RATE_LIMIT_AUTH_ERROR_CACHE_TTL_MS
+        : OPENAI_RATE_LIMIT_ERROR_CACHE_TTL_MS,
+    });
+    return failure;
+  })().finally(() => {
+    openaiRateLimitInflight.delete(username);
+  });
+
+  openaiRateLimitInflight.set(username, fetchPromise);
+  return fetchPromise;
 }
 
 function findUserByEndpointKey(state, apiKeyRaw) {
   const apiKey = String(apiKeyRaw || '').trim();
   if (!apiKey) return null;
+  if (!apiKey.startsWith(OPENAI_API_KEY_PREFIX)) return null;
   for (const user of Object.values(state.users || {})) {
     if (!user.endpointKeySalt || !user.endpointKeyHash) continue;
     if (verifySecret(apiKey, user.endpointKeySalt, user.endpointKeyHash)) return user;
@@ -889,12 +940,39 @@ async function resolveUserByApiKey(state, apiKeyRaw) {
   const apiKey = String(apiKeyRaw || '').trim();
   if (!apiKey) return { ok: false, error: 'Invalid API key' };
 
-  const direct = findUserByEndpointKey(state, apiKey);
-  if (direct) return { ok: true, user: direct, keyType: 'direct' };
+  const looksLikeMaster = apiKey.startsWith(OPENAI_MASTER_KEY_PREFIX);
+  const looksLikeDirect = apiKey.startsWith(OPENAI_API_KEY_PREFIX);
+
+  if (!looksLikeMaster) {
+    const direct = findUserByEndpointKey(state, apiKey);
+    if (direct) return { ok: true, user: direct, keyType: 'direct' };
+    if (looksLikeDirect) return { ok: false, error: 'Invalid API key' };
+  }
 
   const master = state.specialMasterKey || {};
   if (!master.keyHash || !master.keySalt) return { ok: false, error: 'Invalid API key' };
   if (!verifySecret(apiKey, master.keySalt, master.keyHash)) return { ok: false, error: 'Invalid API key' };
+  const cursorKey = String(master.keyHash || '');
+
+  const cachedPool = openaiSpecialAvailableUsersCache.get(cursorKey);
+  if (cachedPool && (Date.now() - toInt(cachedPool.fetchedAt, 0)) <= OPENAI_SPECIAL_AVAILABLE_USERS_CACHE_TTL_MS) {
+    const availableCached = (Array.isArray(cachedPool.usernames) ? cachedPool.usernames : [])
+      .map((username) => state.users && state.users[String(username || '')])
+      .filter((u) =>
+        u
+        && String(u.endpointKeyHash || '').length > 0
+        && String(u.endpointKeySalt || '').length > 0
+        && fs.existsSync(path.join(String(u.codexHome || ''), 'auth.json'))
+      );
+    if (availableCached.length) {
+      const prev = toInt(masterKeyCursorByHash.get(cursorKey), 0);
+      const idx = prev % availableCached.length;
+      const selected = availableCached[idx];
+      masterKeyCursorByHash.set(cursorKey, idx + 1);
+      return { ok: true, user: selected, keyType: 'master', rotatedPoolSize: availableCached.length };
+    }
+    openaiSpecialAvailableUsersCache.delete(cursorKey);
+  }
 
   const candidates = Object.values(state.users || {})
     .filter((u) => String(u.endpointKeyHash || '').length > 0 && String(u.endpointKeySalt || '').length > 0)
@@ -915,10 +993,15 @@ async function resolveUserByApiKey(state, apiKeyRaw) {
 
   const available = checks.filter((c) => c.usable).map((c) => c.user);
   if (!available.length) {
+    openaiSpecialAvailableUsersCache.delete(cursorKey);
     return { ok: false, error: 'All linked keys are exhausted (hourly or weekly remaining = 0%)' };
   }
 
-  const cursorKey = String(master.keyHash || '');
+  openaiSpecialAvailableUsersCache.set(cursorKey, {
+    fetchedAt: Date.now(),
+    usernames: available.map((u) => String(u.username || '')),
+  });
+
   const prev = toInt(masterKeyCursorByHash.get(cursorKey), 0);
   const idx = prev % available.length;
   const selected = available[idx];
@@ -1232,6 +1315,8 @@ async function handleOpenAiPortalApi(req, res, url) {
 
       ctx.state.users[ctx.user.username] = ctx.user;
       ctx.state.revision += 1;
+      openaiRateLimitCache.delete(String(ctx.user.username || ''));
+      openaiSpecialAvailableUsersCache.clear();
       writeState(ctx.state);
 
       writeJson(res, 200, {
@@ -1565,6 +1650,7 @@ async function handleAdminApi(req, res, url, adminAuth) {
       }
       openaiDeviceFlows.delete(username);
       openaiRateLimitCache.delete(username);
+      openaiSpecialAvailableUsersCache.clear();
 
       writeJson(res, 200, { ok: true, username, revision: state.revision });
     } catch (err) {
@@ -1605,6 +1691,7 @@ async function handleAdminApi(req, res, url, adminAuth) {
       };
 
       if (prevHash) masterKeyCursorByHash.delete(prevHash);
+      openaiSpecialAvailableUsersCache.clear();
 
       state.revision += 1;
       writeState(state);
