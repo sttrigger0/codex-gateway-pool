@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Login - Codex Gateway Pool</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body class="login-page">
+  <div class="bg-layer" aria-hidden="true">
+    <div class="bg-orb orb-a"></div>
+    <div class="bg-orb orb-b"></div>
+    <div class="bg-grid"></div>
+  </div>
+
+  <main class="login-shell">
+    <section class="panel login-card">
+      <div class="panel-head"><h2>Admin Login</h2></div>
+      <p class="panel-meta">Access API management for Codex Gateway Pool.</p>
+      <div class="form-grid">
+        <label class="field">
+          <span>Username</span>
+          <input id="username" type="text" autocomplete="username" />
+        </label>
+        <label class="field">
+          <span>Password</span>
+          <input id="password" type="password" autocomplete="current-password" />
+        </label>
+        <button id="loginBtn" class="btn primary" type="button">Log In</button>
+      </div>
+      <div id="status" class="inline-status" style="margin-top:12px;">Ready.</div>
+    </section>
+  </main>
+
+  <script src="/login.js"></script>
+</body>
+</html>

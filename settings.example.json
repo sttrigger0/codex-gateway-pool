@@ -1,0 +1,18 @@
+{
+  "host": "0.0.0.0",
+  "port": 8787,
+  "httpsEnabled": false,
+  "dashboardAuthEnabled": true,
+  "adminUsername": "admin",
+  "adminPassword": "change-me",
+  "openaiApiKeyPrefix": "rneo_codex_",
+  "openaiMasterKeyPrefix": "rneo_master_",
+  "openaiKeyEncryptionSecret": "change-this-to-a-long-random-secret",
+  "openaiCodexTimeoutMs": 120000,
+  "openaiRateLimitCacheTtlMs": 60000,
+  "openaiPromptMaxLen": 49152,
+  "dashboardSessionTtlMs": 2592000000,
+  "openaiPortalSessionTtlMs": 2592000000,
+  "maxSessions": 5000,
+  "codexHomeRoot": "./data/openai_codex"
+}

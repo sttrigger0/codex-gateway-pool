@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Codex Gateway Pool - API Management</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="bg-layer" aria-hidden="true">
+    <div class="bg-orb orb-a"></div>
+    <div class="bg-orb orb-b"></div>
+    <div class="bg-grid"></div>
+  </div>
+
+  <main class="shell">
+    <section class="panel">
+      <div class="panel-head">
+        <h1>Codex Gateway Pool</h1>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <a class="btn subtle" href="/openai">OpenAI Portal</a>
+          <button id="refreshBtn" class="btn subtle" type="button">Refresh</button>
+          <button id="logoutBtn" class="btn primary" type="button">Log Out</button>
+        </div>
+      </div>
+      <p class="panel-meta">Admin API management page for portal users, endpoint keys, and master key rotation pool.</p>
+    </section>
+
+    <section class="cards cards-5" id="summaryCards"></section>
+
+    <section class="panel">
+      <div class="panel-head"><h2>Master Key</h2></div>
+      <div class="master-key-shell">
+        <div class="master-key-top">
+          <div class="master-key-controls">
+            <label class="field">
+              <span>Key Label</span>
+              <input id="masterKeyLabel" type="text" maxlength="64" placeholder="Optional key label" />
+            </label>
+            <button id="rotateMasterBtn" class="btn primary" type="button">Generate Master Key</button>
+          </div>
+          <div class="master-key-metrics">
+            <article class="master-metric">
+              <span class="master-metric-label">Total Remaining Hourly</span>
+              <strong id="combinedHourly" class="master-metric-value">-</strong>
+            </article>
+            <article class="master-metric">
+              <span class="master-metric-label">Total Remaining Weekly</span>
+              <strong id="combinedWeekly" class="master-metric-value">-</strong>
+            </article>
+          </div>
+        </div>
+        <div class="master-key-lines">
+          <div class="master-key-line">
+            <span class="master-key-line-label">Current Mask</span>
+            <code id="masterMask" class="master-key-line-code">Not configured</code>
+          </div>
+          <div class="master-key-line">
+            <span class="master-key-line-label">New Key (Shown Once)</span>
+            <code id="masterNew" class="master-key-line-code">(generate to reveal)</code>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><h2>OpenAI Portal Users</h2><span id="usersCount" class="panel-meta">0 users</span></div>
+      <div class="table-wrap">
+        <table id="usersTable">
+          <thead>
+            <tr>
+              <th>Username</th>
+              <th>API Key</th>
+              <th>Portal Online</th>
+              <th>Portal Sessions</th>
+              <th>Codex Linked</th>
+              <th>Hourly Left</th>
+              <th>Weekly Left</th>
+              <th>Device Auth</th>
+              <th>Last Portal Login</th>
+              <th>Updated</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <div id="status" class="inline-status">Ready.</div>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>

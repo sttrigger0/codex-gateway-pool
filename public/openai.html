@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Codex Gateway Pool - OpenAI Portal</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="/openai.css" />
+</head>
+<body>
+  <div class="bg-layer" aria-hidden="true">
+    <div class="bg-orb orb-a"></div>
+    <div class="bg-orb orb-b"></div>
+    <div class="bg-grid"></div>
+  </div>
+
+  <main class="shell">
+    <section class="panel">
+      <div class="panel-head">
+        <h1>OpenAI / Codex Portal</h1>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <a class="btn subtle" href="/">API Management</a>
+        </div>
+      </div>
+      <p class="panel-meta">Register a portal user, link Codex, generate endpoint keys, and test requests.</p>
+    </section>
+
+    <section class="cards cards-5 openai-status-cards">
+      <article class="card"><div class="label">Portal User</div><div id="userLabel" class="value">Not logged in</div><div class="sub">Current account session</div></article>
+      <article class="card"><div class="label">Codex Link</div><div id="codexStatus" class="value">Unknown</div><div class="sub">auth.json state</div></article>
+      <article class="card"><div class="label">Endpoint Key</div><div id="keyMask" class="value mono">None</div><div class="sub">Masked key</div></article>
+      <article class="card"><div class="label">Device URL</div><div id="deviceUrl" class="value mono compact">-</div><div class="sub">Approve login link</div></article>
+      <article class="card"><div class="label">User Code</div><div id="userCode" class="value mono">-</div><div class="sub">Device auth code</div></article>
+    </section>
+
+    <div id="portalStatus" class="inline-status">Ready.</div>
+
+    <section class="panel-grid two">
+      <article class="panel">
+        <div class="panel-head"><h2>1. Account</h2></div>
+        <div class="form-grid two-col">
+          <label class="field"><span>Username</span><input id="username" type="text" maxlength="32" autocomplete="username" /></label>
+          <label class="field"><span>Password</span><input id="password" type="password" maxlength="128" autocomplete="current-password" /></label>
+          <div class="openai-btn-row" style="grid-column:1/-1;">
+            <button id="registerBtn" type="button" class="btn subtle">Register</button>
+            <button id="loginBtn" type="button" class="btn primary">Login</button>
+            <button id="logoutBtn" type="button" class="btn subtle">Logout</button>
+          </div>
+        </div>
+      </article>
+
+      <article class="panel">
+        <div class="panel-head"><h2>2. Link Codex</h2></div>
+        <div class="openai-btn-row">
+          <button id="startDeviceAuthBtn" type="button" class="btn primary">Start Device Login</button>
+          <button id="refreshStatusBtn" type="button" class="btn subtle">Refresh Status</button>
+        </div>
+        <div class="openai-log-wrap">
+          <div class="openai-log-title">Device Auth Logs</div>
+          <pre id="deviceLogs" class="openai-log">No device-auth logs yet.</pre>
+        </div>
+      </article>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><h2>3. Endpoint Key</h2></div>
+      <div class="form-grid two-col">
+        <label class="field"><span>Label (Optional)</span><input id="keyLabel" type="text" maxlength="64" placeholder="e.g. desktop-key" /></label>
+        <div class="field"><span>Action</span><div class="openai-btn-row"><button id="rotateKeyBtn" type="button" class="btn primary">Generate / Rotate Key</button></div></div>
+      </div>
+      <div class="master-key-lines" style="margin-top:10px;">
+        <div class="master-key-line">
+          <span class="master-key-line-label">New Key (Shown Once)</span>
+          <code id="newKey" class="master-key-line-code">(generate to reveal)</code>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><h2>4. Quick Session Test</h2></div>
+      <div class="form-grid">
+        <div class="form-grid two-col">
+          <label class="field"><span>Model</span><select id="testModel"></select></label>
+          <label class="field"><span>Working Directory</span><input id="testCwd" type="text" value="/root" /></label>
+        </div>
+        <label class="field"><span>Prompt</span><textarea id="testPrompt" rows="5" placeholder="Ask Codex something..."></textarea></label>
+        <div class="openai-btn-row"><button id="runTestBtn" type="button" class="btn primary">Run Test Prompt</button></div>
+        <div class="openai-log-wrap">
+          <div class="openai-log-title">Test Output</div>
+          <pre id="testOutput" class="openai-log">No output yet.</pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><h2>API Reference</h2></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td>POST</td><td><code>/api/openai/v1/chat/completions</code></td><td>OpenAI-style chat endpoint.</td></tr>
+            <tr><td>POST</td><td><code>/api/openai/v1/codex/execute</code></td><td>Prompt execution endpoint.</td></tr>
+            <tr><td>GET</td><td><code>/api/openai/v1/models</code></td><td>Model list.</td></tr>
+            <tr><td>GET</td><td><code>/api/openai/v1/modes</code></td><td>Reasoning mode list.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="openai-reference-grid">
+        <article>
+          <div class="openai-log-title">Default Model</div>
+          <div id="defaultModel" class="openai-inline-code">-</div>
+          <div class="openai-log-title">Available Models</div>
+          <pre id="modelsList" class="openai-log compact">Loading models...</pre>
+        </article>
+        <article>
+          <div class="openai-log-title">Copy/Paste cURL</div>
+          <pre id="curlExample" class="openai-log compact"></pre>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <script src="/openai.js"></script>
+</body>
+</html>

@@ -1,0 +1,71 @@
+.openai-btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.openai-status-cards .value.compact {
+  font-size: 12px;
+  line-height: 1.35;
+  word-break: break-all;
+}
+
+.openai-log-wrap {
+  margin-top: 10px;
+  display: grid;
+  gap: 6px;
+}
+
+.openai-log-title {
+  color: var(--t4);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.openai-log {
+  border: 1px solid var(--border-dim);
+  background: var(--bg-deep);
+  color: var(--t2);
+  padding: 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  max-height: 320px;
+  min-height: 120px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.openai-log.compact {
+  min-height: 96px;
+  max-height: 220px;
+}
+
+.openai-reference-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.openai-reference-grid article {
+  border: 1px solid var(--border-dim);
+  background: var(--bg-deep);
+  padding: 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.openai-inline-code {
+  border: 1px solid var(--border-default);
+  background: rgba(6, 4, 5, 0.8);
+  padding: 8px 10px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+@media (max-width: 960px) {
+  .openai-reference-grid {
+    grid-template-columns: 1fr;
+  }
+}
