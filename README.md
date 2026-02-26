@@ -4,7 +4,7 @@ codex-gateway-pool is a lightweight OAuth-powered gateway that converts authenti
 
 # Accounts
 
-You can buy 1 month chatgpt plus/business accounts in bulk from resellers for 0.5-1$ a pop. The more accounts you have the higher the chance of them getting terminated, so i recommend using business plan accounts in perticular, since tthey seem to get flagged way less and not using more than 10-15 accounts per IP (Which is already way more than enough)
+You can buy 1 month chatgpt plus/business accounts in bulk from resellers for 0.5-1$ a pop. The more accounts you have the higher the chance of them getting terminated, so i recommend using business plan accounts in perticular, since they seem to get flagged way less and not using more than 10-15 accounts per IP (Which is already way more than enough)
 
 ## Features
 
