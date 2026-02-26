@@ -1,6 +1,6 @@
 # Codex Gateway Pool
 
-codex-gateway-pool is a lightweight OAuth-powered gateway that converts authenticated ChatGPT accounts into an API endpoint, supporting both per-account routing and pooled round-robin request distribution for scalable, multi-account usage. It includes a simple web panel for managing connected accounts and pools, along with an easy installation process designed to get you up and running in minutes.
+A lightweight OAuth-powered gateway that converts authenticated ChatGPT accounts into an API endpoint, supporting both per-account routing and pooled round-robin request distribution for scalable, multi-account usage. It includes a simple web panel for managing connected accounts and pools, along with an easy installation process designed to get you up and running in minutes.
 
 # Accounts
 
