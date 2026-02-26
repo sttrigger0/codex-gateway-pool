@@ -1,12 +1,10 @@
 # Codex Gateway Pool
 
-Standalone Codex gateway with:
+codex-gateway-pool is a lightweight OAuth-powered gateway that converts authenticated ChatGPT accounts into an API endpoint, supporting both per-account routing and pooled round-robin request distribution for scalable, multi-account usage. It includes a simple web panel for managing connected accounts and pools, along with an easy installation process designed to get you up and running in minutes.
 
-- OpenAI/Codex user portal (`/openai`)
-- Admin API management panel (`/`)
-- Master API key that rotates requests across eligible linked user keys
+# Accounts
 
-This project is extracted for open-source use and intentionally excludes telemetry/economy/game dashboard features.
+You can buy 1 month chatgpt plus/business accounts in bulk from resellers for 0.5-1$ a pop. The more accounts you have the higher the chance of them getting terminated, so i recommend using business plan accounts in perticular, since tthey seem to get flagged way less and not using more than 10-15 accounts per IP (Which is already way more than enough)
 
 ## Features
 
